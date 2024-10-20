@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema({
         required: true,
         validate: [validator.isMobilePhone, 'Invalid Mobile Number'],
     },
+    password: {
+        type: String,
+        required: true,
+    }
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

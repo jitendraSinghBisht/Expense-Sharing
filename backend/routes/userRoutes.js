@@ -1,9 +1,14 @@
 import express from 'express';
-import { createUser, getUserDetails } from '../controllers/userController.js';
+import verifyToken from '../middlewares/auth.middleware.js';
+import { createUser, getUserDetails, loginUser } from '../controllers/userController.js';
 
 const router = express.Router();
 
-router.post('/', createUser);
-router.get('/:id', getUserDetails);
+router.route("/register").post(createUser);
+router.route("/login").post(loginUser);
+
+//Secured routes
+router.route('/:id').get(verifyToken, getUserDetails);
+// router.route("/logout").post(verifyToken, logoutUser);
 
 export default router;

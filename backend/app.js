@@ -13,8 +13,8 @@ app.use(express.json());
 dotenv.config();
 
 // Routes
-app.use('/users', userRoutes);
-app.use('/expenses', expenseRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/expenses', expenseRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
