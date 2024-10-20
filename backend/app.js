@@ -2,8 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import userRoutes from './routes/userRoutes.js';
-import expenseRoutes from './routes/expenseRoutes.js';
+import initRoutes from './routes/init.js';
 
 const app = express();
 
@@ -13,8 +12,7 @@ app.use(express.json());
 dotenv.config();
 
 // Routes
-app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/expenses', expenseRoutes);
+app.use("/api/v1",initRoutes)
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {

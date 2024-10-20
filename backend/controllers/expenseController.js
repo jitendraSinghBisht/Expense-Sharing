@@ -1,44 +1,50 @@
 import Expense from '../models/expenseModel.js';
 
-// Add a new expense
 export const addExpense = async (req, res) => {
-    const { description, amount, paidBy, participants, splitMethod } = req.body;
+    const { description, amount, participantsInfo, splitMethod } = req.body;   // paritcipantsInfo = {id,amountOwed,percentageOwed,isPaid}
 
     try {
-        // Validate splitMethod
         if (!['equal', 'exact', 'percentage'].includes(splitMethod)) {
             return res.status(400).json({ message: 'Invalid split method' });
         }
 
-        let updatedParticipants;
+        let updatedParticipantsInfo;
 
-        // Handle different split methods
         if (splitMethod === 'equal') {
-            const splitAmount = amount / participants.length;
-            updatedParticipants = participants.map(userId => ({
-                user: userId,
+            const splitAmount = amount / participantsInfo.length;
+            updatedParticipantsInfo = participantsInfo.map(user => ({
+                user: user.id,
                 amountOwed: splitAmount,
+                isPaid: user.isPaid || false,
             }));
         } else if (splitMethod === 'exact') {
-            // Ensure each participant has a defined `amountOwed`
-            updatedParticipants = participants;
+            const totalAmount = participantsInfo.reduce((sum, user) => sum + user.amountOwed, 0);
+            if (totalAmount !== amount) {
+                return res.status(400).json({ message: 'Total amonut must be equal' });
+            }
+            updatedParticipantsInfo = participantsInfo.map(user => ({
+                user: user.id,
+                amountOwed: user.amountOwed,
+                isPaid: user.isPaid || false,
+            }));
         } else if (splitMethod === 'percentage') {
-            const totalPercentage = participants.reduce((sum, p) => sum + p.percentage, 0);
+            const totalPercentage = participantsInfo.reduce((sum, user) => sum + user.percentageOwed, 0);
             if (totalPercentage !== 100) {
                 return res.status(400).json({ message: 'Total percentage must equal 100%' });
             }
-            updatedParticipants = participants.map(p => ({
-                user: p.user,
-                amountOwed: (amount * p.percentage) / 100,
+            updatedParticipantsInfo = participantsInfo.map(user => ({
+                user: user.id,
+                percentageOwed: user.percentageOwed,
+                amountOwed: (amount * user.percentageOwed) / 100,
+                isPaid: user.isPaid || false,
             }));
         }
 
-        // Create the expense with the correct participant information
         const expense = new Expense({
             description,
             amount,
-            paidBy,
-            participants: updatedParticipants,
+            splitMethod,
+            participantsInfo: updatedParticipantsInfo,
         });
 
         await expense.save();
@@ -50,27 +56,9 @@ export const addExpense = async (req, res) => {
     }
 };
 
-// Retrieve expenses for a specific user
-export const getUserExpenses = async (req, res) => {
-    try {
-        // Find all expenses where the current user is in the participants list
-        const expenses = await Expense.find({ 'participants.user': req.params.id })
-            .populate('paidBy', 'name email') // Populate paidBy user details
-            .populate('participants.user', 'name email'); // Populate participant user details
-        res.status(200).json(expenses);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Failed to retrieve user expenses', error: error.message });
-    }
-};
-
-// Retrieve all expenses
 export const getOverallExpenses = async (req, res) => {
     try {
-        // Fetch all expenses and populate user details
-        const expenses = await Expense.find()
-            .populate('paidBy', 'name email') // Populate paidBy with name and email
-            .populate('participants.user', 'name email'); // Populate participant user details
+        const expenses = await Expense.find().populate('participantsInfo.user', '_id');
         res.status(200).json(expenses);
     } catch (error) {
         console.error(error);
