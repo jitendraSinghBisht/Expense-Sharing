@@ -41,6 +41,7 @@ export const addExpense = async (req, res) => {
         }
 
         const expense = new Expense({
+            createdBy: req.user.id,
             description,
             amount,
             splitMethod,
